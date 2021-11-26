@@ -10,7 +10,7 @@ An implementation for [Azure Service Bus](https://docs.microsoft.com/en-us/azure
 
 ## Installation
 
-    pip install dramatiq_azure
+    pip install dramatiq-azure
 
 
 ## Usage
