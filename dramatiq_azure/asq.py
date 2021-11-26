@@ -1,18 +1,23 @@
 from collections import deque
-from typing import Iterable, Optional
+from typing import Iterable, List, Optional
 import time
 import os
 import dramatiq
-from azure.core.exceptions import ResourceExistsError
+from azure.core.exceptions import (
+    ResourceExistsError,
+    HttpResponseError,
+)
 from azure.storage.queue import (
-    QueueClient, 
-    BinaryBase64EncodePolicy, 
-    BinaryBase64DecodePolicy, 
+    QueueClient,
+    BinaryBase64EncodePolicy,
+    BinaryBase64DecodePolicy,
     QueueMessage,
 )
 
 
 import logging
+
+from dramatiq.common import compute_backoff
 
 # Set the logging level for all azure-storage-* libraries
 logger = logging.getLogger("azure")
@@ -23,16 +28,13 @@ MAX_PREFETCH = 32
 
 
 #: The minimum time to wait between polls in second.
-MIN_TIMEOUT = int(os.getenv("DRAMATIQ_asq_MIN_TIMEOUT", "20"))
+MIN_TIMEOUT = int(os.getenv("DRAMATIQ_ASQ_MIN_TIMEOUT", "20"))
 
-#: The number of times a message will be received before being added
 #: to the dead-letter queue (if enabled).
 MAX_RECEIVES = 3
 
-CONN_ENV  = "AZURE_STORAGE_CONNECTION_STR"
-
-#: The Azure Storage connection string
-CONN_STR = os.getenv(CONN_ENV) 
+#: Azure Storage authentication
+CONN_STR = os.getenv("AZURE_STORAGE_CONNECTION_STR")
 
 
 def _get_client(queue_name) -> QueueClient:
@@ -53,8 +55,14 @@ class _ASQMessage(dramatiq.MessageProxy):
     def __init__(self, asq_message: QueueMessage, message: dramatiq.Message) -> None:
         super().__init__(message)
         # force type hint
+        self.message_id = message.message_id
         self._message = message
         self._asq_message = asq_message
+
+    @classmethod
+    def from_queue_message(cls, _message: QueueMessage):
+        dramatiq_message = dramatiq.Message.decode(_message.content)
+        return cls(_message, dramatiq_message)
 
 
 class _ASQConsumer(dramatiq.Consumer):
@@ -66,56 +74,84 @@ class _ASQConsumer(dramatiq.Consumer):
         timeout: int,
         dead_letter: bool = False,
     ) -> None:
-        self.logger = broker.request.logger
         self.prefetch = min(prefetch, MAX_PREFETCH)
         self.timeout = timeout
+        self.visibility_timeout = int(timeout / 1000)
         self.queue_name = queue_name
-        # local cache
-        self.messages: deque = deque()
-        self.message_refc = 0
         self.dead_letter = dead_letter
         self.q_client = _get_client(queue_name)
         self.dlq_client = _get_dlq_client(queue_name) if dead_letter else None
 
+        # local cache
+        self.message_cache: List[_ASQMessage] = []
+        self.queued_message_ids = set()
+        self.misses = 0
+
+    @property
+    def outstanding_message_count(self):
+        return len(self.queued_message_ids) + len(self.message_cache)
+
+    @property
+    def ref_count(self):
+        return len(self.messages)
+
     def ack(self, message: _ASQMessage) -> None:
         self.q_client.delete_message(message._asq_message)
-        self.message_refc -= 1
+        if message.message_id in self.queued_message_ids:
+            self.queued_message_ids.remove(message.message_id)
 
     def nack(self, message: _ASQMessage) -> None:
         if self.dlq_client:
             self.dlq_client.send_message(message._message.encode())
         self.q_client.delete_message(message._asq_message)
-        self.message_refc -= 1
+        if message.message_id in self.queued_message_ids:
+            self.queued_message_ids.remove(message.message_id)
 
     def requeue(self, messages: Iterable[_ASQMessage]) -> None:
         # No batch processing
         for message in messages:
             self.q_client.send_message(message._message.encode())
             self.q_client.delete_message(message._asq_message)
-            self.message_refc -= 1
+            if message.message_id in self.queued_message_ids:
+                self.queued_message_ids.remove(message.message_id)
 
-    def __next__(self) -> Optional[dramatiq.Message]:
-        try:
-            return self.messages.popleft()
-        except IndexError:
-            if self.message_refc < self.prefetch:
-                messages = self.q_client.receive_messages(
-                    messages_per_page=self.prefetch,
-                    visibility_timeout=self.timeout,
-                )
-                for msg_batch in messages.by_page():
-                    for _message in msg_batch:
-                        dramatiq_message = dramatiq.Message.decode(_message.content)
-                        self.messages.append(_ASQMessage(_message, dramatiq_message))
-                        self.message_refc += 1
-                time.sleep(MIN_TIMEOUT)
+    def __next__(self) -> Optional[_ASQMessage]:
+        while True:
             try:
-                return self.messages.popleft()
+                match = self.message_cache.pop(0)
+                self.misses = 0
+                self.queued_message_ids.add(match.message_id)
+                return match
             except IndexError:
-                return None
+                msg_batch = []
+                if self.outstanding_message_count < self.prefetch:
+                    fillout = self.prefetch - self.outstanding_message_count
+                    pager = self.q_client.receive_messages(
+                        messages_per_page=fillout,
+                        visibility_timeout=self.visibility_timeout,
+                    )
+                    msg_batch = [item for sublist in pager.by_page() for item in sublist]
+                    self.message_cache = [_ASQMessage.from_queue_message(_msg) for _msg in msg_batch]
+                if not msg_batch:
+                    self.misses, backoff_ms = compute_backoff(self.misses, max_backoff=self.timeout)
+                    time.sleep(backoff_ms)
+                    return None
 
 
 class ASQBroker(dramatiq.Broker):
+    """A Dramatiq_ broker that can be used with `Azure Storage Queues`_
+    This backend has a number of limitations compared to the built-in
+    Redis and RMQ backends:
+      * messages can be at most 64KiB large,
+    The backend uses the `Python Azure SDK`_ (v12).
+    Parameters:
+      middleware: The set of middleware that apply to this broker.
+      dead_letter: Whether to add a dead-letter queue. Defaults to false.
+    .. _Dramatiq: https://dramatiq.io
+    .. _Azure Storage Queues: https://docs.microsoft.com/en-us/azure/storage/queues/
+    .. _Python Azure SDK: http://boto3.readthedocs.io/en/latest/index.html
+    """
+
     def __init__(
         self,
         *,
@@ -126,7 +162,7 @@ class ASQBroker(dramatiq.Broker):
         self.queues: set = set()
         self.dead_letter = dead_letter
 
-    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 3000):
+    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 5000) -> dramatiq.Consumer:
         if queue_name not in self.queues:
             raise dramatiq.errors.QueueNotFound(queue_name)
         return _ASQConsumer(self, queue_name, prefetch, timeout, dead_letter=self.dead_letter)
@@ -153,12 +189,15 @@ class ASQBroker(dramatiq.Broker):
 
         delay_sec = int(delay / 1000) if delay else 0
 
-        self.logger.debug(f"Enqueueing message {message.message_id} on queue {queue_name}.")
+        logger.debug(f"Enqueueing message {message.message_id} on queue {queue_name}.")
         self.emit_before("enqueue", message, delay)
         q_client = _get_client(queue_name)
-        q_client.send_message(message.encode(), visibility_timeout=delay_sec)
-        self.emit_after("enqueue", message, delay)
-        return message
+        try:
+            q_client.send_message(message.encode(), visibility_timeout=delay_sec)
+            self.emit_after("enqueue", message, delay)
+            return message
+        except HttpResponseError as e:
+            raise RuntimeError(str(e))
 
     def flush(self, queue_name: str):
         if queue_name not in self.queues:

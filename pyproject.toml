@@ -3,7 +3,7 @@ name = "dramatiq_azure"
 version = "0.1.0"
 description = "Azure Queue Brokers for Dramatiq"
 authors = ["Stanislas H.B. Sodonon <stanislas.sodonon@gmail.com>"]
-repository = https://github.com/bidossessi/dramatiq-azure
+repository = "https://github.com/bidossessi/dramatiq-azure"
 readme = 'README.md'
 keywords = ['dramatiq', 'azure', 'queue', 'broker']
 license = "Apache-2.0"
@@ -21,6 +21,7 @@ pytest = "^6.2.5"
 pytest-cov = "^3.0.0"
 mypy = "^0.910"
 twine = "^3.6.0"
+pytest-env = "^0.6.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -1,3 +1,3 @@
-from asq import ASQBroker
+from .asq import ASQBroker
 
 __all__ = ["ASQBroker"]

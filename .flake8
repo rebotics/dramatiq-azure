@@ -1,0 +1,14 @@
+[flake8]
+max-line-length = 120
+extend-ignore = E203, E731, W503, W504
+exclude =
+  tests
+  __pycache__
+  .git
+  .venv
+  .tox
+  .mypy_cache
+  .pytest_cache
+  .vscode
+  .github
+  .nova
