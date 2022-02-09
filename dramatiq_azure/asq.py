@@ -130,7 +130,7 @@ class _ASQConsumer(dramatiq.Consumer):
                         messages_per_page=fillout,
                         visibility_timeout=self.visibility_timeout,
                     )
-                    msg_batch = [item for sublist in pager.by_page() for item in sublist]
+                    msg_batch = [item for item in next(pager.by_page())]
                     self.message_cache = [_ASQMessage.from_queue_message(_msg) for _msg in msg_batch]
                 if not msg_batch:
                     self.misses, backoff_ms = compute_backoff(self.misses, max_backoff=self.timeout)
