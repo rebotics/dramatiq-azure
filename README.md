@@ -2,9 +2,9 @@
 [![CI](https://github.com/bidossessi/dramatiq-azure/actions/workflows/ci.yml/badge.svg)](https://github.com/bidossessi/dramatiq-azure/actions/workflows/ci.yml)
 [![Upload Python Package](https://github.com/bidossessi/dramatiq-azure/actions/workflows/python-publish.yml/badge.svg)](https://github.com/bidossessi/dramatiq-azure/actions/workflows/python-publish.yml)
 [![codecov](https://codecov.io/gh/bidossessi/dramatiq-azure/branch/main/graph/badge.svg?token=6LLEDAM3SG)](https://codecov.io/gh/bidossessi/dramatiq-azure)
-[![Known Vulnerabilities](https://snyk.io/test/github/bidossessi/dramatiq-azure/badge.svg)](https://snyk.io/test/github/bidossessi/dramatiq-azure)
+[![BCH compliance](https://bettercodehub.com/edge/badge/bidossessi/dramatiq-azure?branch=main)](https://bettercodehub.com/)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/bidossessi/dramatiq-azure.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/bidossessi/dramatiq-azure/alerts/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://makeapullrequest.com)
 
 
 A [Dramatiq](https://dramatiq.io) broker that can be used with [Microsoft Azure](https://azure.microsoft.com/en-us/) queue services.
