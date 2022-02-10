@@ -1,4 +1,3 @@
-import json
 import time
 
 import dramatiq
@@ -9,7 +8,7 @@ from dramatiq_azure import asq
 
 
 def test_can_enqueue_and_process_messages(asq_broker, worker, queue_name):
-    # Given that I have an actor that stores incoming messages in a database
+    # Given an actor that stores incoming messages in a database
     db = []
 
     @dramatiq.actor(queue_name=queue_name)
@@ -51,7 +50,7 @@ def test_limits_prefetch_if_consumer_queue_is_full(asq_broker, worker, queue_nam
 
 
 def test_can_enqueue_delayed_messages(asq_broker, worker, queue_name):
-    # Given that I have an actor that stores incoming messages in a database
+    # Given an actor that stores incoming messages in a database
     db = []
 
     @dramatiq.actor(queue_name=queue_name)
@@ -102,7 +101,7 @@ def test_cant_enqueue_messages_that_are_too_large(asq_broker, queue_name):
 
 
 def test_can_requeue_consumed_messages(asq_broker, queue_name):
-    # Given that I have an actor
+    # Given an actor
     @dramatiq.actor(queue_name=queue_name)
     def do_work():
         pass
@@ -127,14 +126,15 @@ def test_creates_dead_letter_queue():
     asq_broker = asq.ASQBroker(dead_letter=True)
 
     # When I create a queue
-    # Then a dead-letter queue should be created
     asq_broker.declare_queue("test")
 
+    # Then a dead-letter queue should be created
     dlq = asq._get_dlq_client("test")
     assert isinstance(dlq, QueueClient)
 
 
 def test_consumer_returns_none_with_empty_queue(queue_name):
+
     asq_broker = asq.ASQBroker(dead_letter=False)
     asq_broker.declare_queue(queue_name)
 
@@ -148,3 +148,72 @@ def test_consumer_returns_none_with_empty_queue(queue_name):
     # Try another time
     second_message = next(consumer)
     assert not second_message
+
+
+def test_flush_queues_returns_no_message(asq_broker, queue_name):
+    # Given an actor
+    @dramatiq.actor(queue_name=queue_name)
+    def do_work():
+        pass
+
+    # When I send that actor messages
+    for _ in range(20):
+        do_work.send()
+
+    # And flush the queue
+    asq_broker.flush_all()
+
+    # Then the consumer returns no message
+    consumer = asq_broker.consume(queue_name)
+    assert not next(consumer)
+
+
+def test_invalid_queue_fails(queue_name):
+    # Given a broker
+    asq_broker = asq.ASQBroker(dead_letter=False)
+
+    # When I attempt to consume from an undeclared queue
+    # Then an exception is raised
+    with pytest.raises(dramatiq.errors.QueueNotFound):
+        asq_broker._validate_queue(queue_name)
+
+
+def test_redeclare_queue_passes(queue_name):
+    # Given a broker and a declared queue
+    asq_broker = asq.ASQBroker(dead_letter=True)
+    asq_broker.declare_queue(queue_name)
+
+    # When I attempt to redeclare an existing queue
+    asq_broker.declare_queue(queue_name)
+    asq_broker.declare_queue(queue_name)
+    asq_broker.declare_queue(queue_name)
+
+    # Then there's only one queue created
+    assert len(asq_broker.queues) == 1
+
+
+def test_nacked_messages_go_to_dlq(queue_name):
+    # Given an actor and a consumer, and some queued messages
+    asq_broker = asq.ASQBroker(dead_letter=True)
+    asq_broker.declare_queue(queue_name)
+
+    @dramatiq.actor(queue_name=queue_name)
+    def do_work():
+        pass
+
+    for i in range(20):
+        do_work.send(i)
+    consumer = asq_broker.consume(queue_name)
+
+    msg = next(consumer)
+    msg_content = msg._asq_message.content
+    assert msg.message_id in consumer.queued_message_ids
+
+    # When I nack a message
+    consumer.nack(msg)
+
+    # Then the message is moved to the DL queue
+    assert msg.message_id not in consumer.queued_message_ids
+    dlq = asq._get_dlq_client(queue_name)
+    dlqd_msg = dlq.receive_message()
+    assert dlqd_msg.content == msg_content

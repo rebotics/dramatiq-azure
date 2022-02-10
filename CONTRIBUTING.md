@@ -26,11 +26,13 @@ Make sure the tests pass:
 poetry run pytest
 ```
 
-Make your change. Add tests for your change. Make the tests pass
+Make your change. Add tests for your change. Make the tests pass.
+Your tests should follow the [Arrange, Act and Assert](https://jamescooke.info/arrange-act-assert-pattern-for-python-developers.html) pattern as much as possible.
 
 ```
 poetry run pytest
 ```
+
 
 All green? You're ready to submit a [pull request](https://github.com/bidossessi/dramatiq-azure/compare).
 Let us know:

@@ -14,6 +14,7 @@ from dramatiq_azure import asq
 @pytest.fixture
 def asq_broker():
     broker = asq.ASQBroker(
+        dead_letter=True,
         middleware=[
             AgeLimit(),
             TimeLimit(),
