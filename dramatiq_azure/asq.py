@@ -1,4 +1,3 @@
-from collections import deque
 from typing import Iterable, List, Optional
 import time
 import os

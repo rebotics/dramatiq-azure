@@ -1,6 +1,10 @@
 # dramatiq-azure
 [![CI](https://github.com/bidossessi/dramatiq-azure/actions/workflows/ci.yml/badge.svg)](https://github.com/bidossessi/dramatiq-azure/actions/workflows/ci.yml)
 [![Upload Python Package](https://github.com/bidossessi/dramatiq-azure/actions/workflows/python-publish.yml/badge.svg)](https://github.com/bidossessi/dramatiq-azure/actions/workflows/python-publish.yml)
+[![Known Vulnerabilities](https://snyk.io/test/github/bidossessi/dramatiq-azure/badge.svg)](https://snyk.io/test/github/bidossessi/dramatiq-azure)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/bidossessi/dramatiq-azure.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/bidossessi/dramatiq-azure/alerts/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
+
 
 A [Dramatiq](https://dramatiq.io) broker that can be used with [Microsoft Azure](https://azure.microsoft.com/en-us/) queue services.
 
@@ -10,11 +14,10 @@ An implementation for [Azure Service Bus](https://docs.microsoft.com/en-us/azure
 
 ## Installation
 
+```shell
     pip install dramatiq-azure
-
-
+```
 ## Usage
-
 
 ### ASQBroker
 
@@ -24,7 +27,7 @@ You need to make sure that the variable exists at runtime.
 Creating a connection string for your Azure account is documented [here](https://docs.microsoft.com/en-us/azure/storage/common/storage-configure-connection-string).
 
 
-``` python
+```python
 import os
 import dramatiq
 
@@ -47,8 +50,19 @@ dramatiq.set_broker(broker)
 ```
 
 ## Tests
+
 Tests require a running [Azurite](https://github.com/Azure/Azurite) instance. You can easily launch `azurite` through [Docker](https://www.docker.com/).
 
-```bash
+```shell
 docker run -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-storage/azurite
 ```
+
+Run the test suite
+
+```shell
+pytest
+```
+
+## Contributions
+
+Found an itch you know how to scratch? PR welcome
