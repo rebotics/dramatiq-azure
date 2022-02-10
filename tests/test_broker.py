@@ -132,3 +132,19 @@ def test_creates_dead_letter_queue():
 
     dlq = asq._get_dlq_client("test")
     assert isinstance(dlq, QueueClient)
+
+
+def test_consumer_returns_none_with_empty_queue(queue_name):
+    asq_broker = asq.ASQBroker(dead_letter=False)
+    asq_broker.declare_queue(queue_name)
+
+    # Consume a message off an empty queue
+    consumer = asq_broker.consume(queue_name)
+    first_message = next(consumer)
+
+    # As the queue is empty message should be None
+    assert not first_message
+
+    # Try another time
+    second_message = next(consumer)
+    assert not second_message
