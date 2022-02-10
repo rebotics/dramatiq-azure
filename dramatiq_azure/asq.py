@@ -130,11 +130,15 @@ class _ASQConsumer(dramatiq.Consumer):
                         messages_per_page=fillout,
                         visibility_timeout=self.visibility_timeout,
                     )
-                    msg_batch = [item for item in next(pager.by_page())]
-                    self.message_cache = [_ASQMessage.from_queue_message(_msg) for _msg in msg_batch]
+                    try:
+                        msg_batch = [item for item in next(pager.by_page())]
+                        self.message_cache = [_ASQMessage.from_queue_message(_msg) for _msg in msg_batch]
+                    except StopIteration:
+                        pass
+
                 if not msg_batch:
                     self.misses, backoff_ms = compute_backoff(self.misses, max_backoff=self.timeout)
-                    time.sleep(backoff_ms)
+                    time.sleep(backoff_ms / 1000)
                     return None
 
 
