@@ -29,7 +29,7 @@ import os
 import dramatiq
 
 from dramatiq.middleware import AgeLimit, TimeLimit, Callbacks, Pipelines, Prometheus, Retries
-from dramatiq_azure import asqBroker
+from dramatiq_azure import ASQBroker
 
 
 broker = ASQBroker(
