@@ -149,7 +149,7 @@ class ASQBroker(dramatiq.Broker):
       dead_letter: Whether to add a dead-letter queue. Defaults to false.
     .. _Dramatiq: https://dramatiq.io
     .. _Azure Storage Queues: https://docs.microsoft.com/en-us/azure/storage/queues/
-    .. _Python Azure SDK: http://boto3.readthedocs.io/en/latest/index.html
+    .. _Python Azure SDK: https://github.com/Azure/azure-sdk-for-python
     """
 
     def __init__(
