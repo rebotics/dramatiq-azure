@@ -90,29 +90,28 @@ class _ASQConsumer(dramatiq.Consumer):
     def outstanding_message_count(self):
         return len(self.queued_message_ids) + len(self.message_cache)
 
-    @property
-    def ref_count(self):
-        return len(self.messages)
+    def __remove_from_queue(self, message: _ASQMessage):
+        self.q_client.delete_message(message._asq_message)
+        if message.message_id in self.queued_message_ids:
+            self.queued_message_ids.remove(message.message_id)
 
     def ack(self, message: _ASQMessage) -> None:
-        self.q_client.delete_message(message._asq_message)
-        if message.message_id in self.queued_message_ids:
-            self.queued_message_ids.remove(message.message_id)
+        self.__remove_from_queue(message)
 
     def nack(self, message: _ASQMessage) -> None:
-        if self.dlq_client:
+        """
+        Send to the dead-letter queue, if available.
+        Dead-leter queues are meant to be managed manually.
+        """
+        if self.dlq_client is not None:
             self.dlq_client.send_message(message._message.encode())
-        self.q_client.delete_message(message._asq_message)
-        if message.message_id in self.queued_message_ids:
-            self.queued_message_ids.remove(message.message_id)
+        self.__remove_from_queue(message)
 
     def requeue(self, messages: Iterable[_ASQMessage]) -> None:
         # No batch processing
         for message in messages:
             self.q_client.send_message(message._message.encode())
-            self.q_client.delete_message(message._asq_message)
-            if message.message_id in self.queued_message_ids:
-                self.queued_message_ids.remove(message.message_id)
+            self.__remove_from_queue(message)
 
     def __next__(self) -> Optional[_ASQMessage]:
         while True:
@@ -133,7 +132,7 @@ class _ASQConsumer(dramatiq.Consumer):
                         msg_batch = [item for item in next(pager.by_page())]
                         self.message_cache = [_ASQMessage.from_queue_message(_msg) for _msg in msg_batch]
                     except StopIteration:
-                        pass
+                        self.message_cache = []
 
                 if not msg_batch:
                     self.misses, backoff_ms = compute_backoff(self.misses, max_backoff=self.timeout)
@@ -165,9 +164,12 @@ class ASQBroker(dramatiq.Broker):
         self.queues: set = set()
         self.dead_letter = dead_letter
 
-    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 5000) -> dramatiq.Consumer:
+    def _validate_queue(self, queue_name: str):
         if queue_name not in self.queues:
             raise dramatiq.errors.QueueNotFound(queue_name)
+
+    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 5000) -> dramatiq.Consumer:
+        self._validate_queue(queue_name)
         return _ASQConsumer(self, queue_name, prefetch, timeout, dead_letter=self.dead_letter)
 
     def declare_queue(self, queue_name: str) -> None:
@@ -177,18 +179,20 @@ class ASQBroker(dramatiq.Broker):
             try:
                 q_client = _get_client(queue_name)
                 q_client.create_queue()
-                if self.dead_letter:
+            except ResourceExistsError:
+                logger.warning(f"Queue already exists: {queue_name}")
+            if self.dead_letter:
+                try:
                     dlq_client = _get_dlq_client(queue_name)
                     dlq_client.create_queue()
-            except ResourceExistsError:
-                pass
+                except ResourceExistsError:
+                    logger.warning(f"DL Queue already exists: {queue_name}")
             self.queues.add(queue_name)
             self.emit_after("declare_queue", queue_name)
 
     def enqueue(self, message: dramatiq.Message, *, delay: Optional[int] = None) -> dramatiq.Message:
         queue_name = message.queue_name
-        if queue_name not in self.queues:
-            raise dramatiq.errors.QueueNotFound(queue_name)
+        self._validate_queue(queue_name)
 
         delay_sec = int(delay / 1000) if delay else 0
 
@@ -203,8 +207,7 @@ class ASQBroker(dramatiq.Broker):
             raise RuntimeError(str(e))
 
     def flush(self, queue_name: str):
-        if queue_name not in self.queues:
-            raise dramatiq.errors.QueueNotFound(queue_name)
+        self._validate_queue(queue_name)
         q_client = _get_client(queue_name)
         q_client.clear_messages()
 
