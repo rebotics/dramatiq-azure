@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Iterable, List, Optional
 import time
 import os
@@ -19,8 +20,11 @@ import logging
 from dramatiq.common import compute_backoff
 
 # Set the logging level for all azure-storage-* libraries
-logger = logging.getLogger("azure")
-logger.setLevel(logging.WARNING)
+azure_logger = logging.getLogger("azure")
+azure_logger.setLevel(logging.WARNING)
+
+
+logger = logging.getLogger(__name__)
 
 #: The max number of messages that may be prefetched at a time.
 MAX_PREFETCH = 32
@@ -50,6 +54,14 @@ def _get_dlq_client(queue_name) -> QueueClient:
     return _get_client(dlqueue_name)
 
 
+@dataclass
+class ConsumerOptions:
+    queue_name: str
+    prefetch: int
+    timeout: int
+    dead_letter: bool = False
+
+
 class _ASQMessage(dramatiq.MessageProxy):
     def __init__(self, asq_message: QueueMessage, message: dramatiq.Message) -> None:
         super().__init__(message)
@@ -65,21 +77,14 @@ class _ASQMessage(dramatiq.MessageProxy):
 
 
 class _ASQConsumer(dramatiq.Consumer):
-    def __init__(
-        self,
-        broker,
-        queue_name: str,
-        prefetch: int,
-        timeout: int,
-        dead_letter: bool = False,
-    ) -> None:
-        self.prefetch = min(prefetch, MAX_PREFETCH)
-        self.timeout = timeout
-        self.visibility_timeout = int(timeout / 1000)
-        self.queue_name = queue_name
-        self.dead_letter = dead_letter
-        self.q_client = _get_client(queue_name)
-        self.dlq_client = _get_dlq_client(queue_name) if dead_letter else None
+    def __init__(self, broker: dramatiq.Broker, options: ConsumerOptions) -> None:
+        self.prefetch = min(options.prefetch, MAX_PREFETCH)
+        self.timeout = options.timeout
+        self.visibility_timeout = int(options.timeout / 1000)
+        self.queue_name = options.queue_name
+        self.dead_letter = options.dead_letter
+        self.q_client = _get_client(options.queue_name)
+        self.dlq_client = _get_dlq_client(options.queue_name) if options.dead_letter else None
 
         # local cache
         self.message_cache: List[_ASQMessage] = []
@@ -164,13 +169,19 @@ class ASQBroker(dramatiq.Broker):
         self.queues: set = set()
         self.dead_letter = dead_letter
 
-    def _validate_queue(self, queue_name: str):
+    def validate_queue(self, queue_name: str):
         if queue_name not in self.queues:
             raise dramatiq.errors.QueueNotFound(queue_name)
 
     def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 5000) -> dramatiq.Consumer:
-        self._validate_queue(queue_name)
-        return _ASQConsumer(self, queue_name, prefetch, timeout, dead_letter=self.dead_letter)
+        self.validate_queue(queue_name)
+        options = ConsumerOptions(
+            queue_name=queue_name,
+            prefetch=prefetch,
+            timeout=timeout,
+            dead_letter=self.dead_letter,
+        )
+        return _ASQConsumer(self, options)
 
     def declare_queue(self, queue_name: str) -> None:
 
@@ -192,7 +203,7 @@ class ASQBroker(dramatiq.Broker):
 
     def enqueue(self, message: dramatiq.Message, *, delay: Optional[int] = None) -> dramatiq.Message:
         queue_name = message.queue_name
-        self._validate_queue(queue_name)
+        self.validate_queue(queue_name)
 
         delay_sec = int(delay / 1000) if delay else 0
 
@@ -207,7 +218,7 @@ class ASQBroker(dramatiq.Broker):
             raise RuntimeError(str(e))
 
     def flush(self, queue_name: str):
-        self._validate_queue(queue_name)
+        self.validate_queue(queue_name)
         q_client = _get_client(queue_name)
         q_client.clear_messages()
 

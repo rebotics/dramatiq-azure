@@ -175,7 +175,7 @@ def test_invalid_queue_fails(queue_name):
     # When I attempt to consume from an undeclared queue
     # Then an exception is raised
     with pytest.raises(dramatiq.errors.QueueNotFound):
-        asq_broker._validate_queue(queue_name)
+        asq_broker.validate_queue(queue_name)
 
 
 def test_redeclare_queue_passes(queue_name):
