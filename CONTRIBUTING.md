@@ -2,10 +2,10 @@
 
 Thank you for wanting to give this project a hand. It's really appreciated.
 
-This aproject is developped with `Python`. 
+This aproject is developped with `Python`.
 To get your development  environment started, here are a few tips.
 
-Have [poetry](https://python-poetry.org/docs/#installation) installed. 
+Have [poetry](https://python-poetry.org/docs/#installation) installed.
 
 Fork, then clone the repo:
 
@@ -20,6 +20,10 @@ cd path/to/the/code
 poetry install
 ```
 
+Set-up pre-commit rules
+```
+poetry run pre-commit install
+```
 Make sure the tests pass:
 
 ```shell
