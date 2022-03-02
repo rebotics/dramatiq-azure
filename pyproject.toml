@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dramatiq_azure"
-version = "0.1.4"
+version = "0.1.5"
 description = "Azure Queue Brokers for Dramatiq"
 authors = ["Stanislas H.B. Sodonon <stanislas.sodonon@gmail.com>"]
 repository = "https://github.com/bidossessi/dramatiq-azure"
