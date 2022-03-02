@@ -1,0 +1,19 @@
+repos:
+- repo: https://github.com/floatingpurr/sync_with_poetry
+  rev: 0.1.0 # the revision or tag to clone at
+  hooks:
+    - id: sync_with_poetry
+      args: [] # optional args
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.1.0
+  hooks:
+    - id: end-of-file-fixer
+    - id: trailing-whitespace
+- repo: https://github.com/psf/black
+  rev: 21.12b0
+  hooks:
+    - id: black
+- repo: https://gitlab.com/pycqa/flake8
+  rev: 3.7.9
+  hooks:
+    - id: flake8
