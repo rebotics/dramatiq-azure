@@ -17,8 +17,10 @@ jobs:
         uses: potatoqualitee/azuright@v1.1
       - name: Install poetry
         run:  curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
-      - name: Install dependencies 
+      - name: Install dependencies
         run: poetry install
+      - name: Lint code
+        uses: psf/black@stable
       - name: Run Tests
         run: poetry run pytest
       - name: Upload coverage to Codecov
