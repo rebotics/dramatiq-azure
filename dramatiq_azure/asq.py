@@ -39,10 +39,10 @@ MIN_TIMEOUT = int(os.getenv("DRAMATIQ_ASQ_MIN_TIMEOUT", "20"))
 MAX_RECEIVES = 3
 
 #: Azure Storage authentication
-CONN_STR = os.getenv("AZURE_STORAGE_CONNECTION_STR")
+CONN_STR = os.getenv("AZURE_STORAGE_CONNECTION_STR", "")
 
 
-def _get_client(queue_name) -> QueueClient:
+def _get_client(queue_name: str) -> QueueClient:
     return QueueClient.from_connection_string(
         conn_str=CONN_STR,
         queue_name=queue_name,
@@ -51,7 +51,7 @@ def _get_client(queue_name) -> QueueClient:
     )
 
 
-def _get_dlq_client(queue_name) -> QueueClient:
+def _get_dlq_client(queue_name: str) -> QueueClient:
     dlqueue_name = f"{queue_name}-dlq"
     return _get_client(dlqueue_name)
 
@@ -65,7 +65,9 @@ class ConsumerOptions:
 
 
 class _ASQMessage(dramatiq.MessageProxy):
-    def __init__(self, asq_message: QueueMessage, message: dramatiq.Message) -> None:
+    def __init__(
+        self, asq_message: QueueMessage, message: dramatiq.Message
+    ) -> None:
         super().__init__(message)
         # force type hint
         self.message_id = message.message_id
@@ -79,14 +81,18 @@ class _ASQMessage(dramatiq.MessageProxy):
 
 
 class _ASQConsumer(dramatiq.Consumer):
-    def __init__(self, broker: dramatiq.Broker, options: ConsumerOptions) -> None:
+    def __init__(
+        self, broker: dramatiq.Broker, options: ConsumerOptions
+    ) -> None:
         self.prefetch = min(options.prefetch, MAX_PREFETCH)
         self.timeout = options.timeout
         self.visibility_timeout = int(options.timeout / 1000)
         self.queue_name = options.queue_name
         self.dead_letter = options.dead_letter
         self.q_client = _get_client(options.queue_name)
-        self.dlq_client = _get_dlq_client(options.queue_name) if options.dead_letter else None
+        self.dlq_client = (
+            _get_dlq_client(options.queue_name) if options.dead_letter else None
+        )
 
         # local cache
         self.message_cache: List[_ASQMessage] = []
@@ -137,12 +143,17 @@ class _ASQConsumer(dramatiq.Consumer):
                     )
                     try:
                         msg_batch = [item for item in next(pager.by_page())]
-                        self.message_cache = [_ASQMessage.from_queue_message(_msg) for _msg in msg_batch]
+                        self.message_cache = [
+                            _ASQMessage.from_queue_message(_msg)
+                            for _msg in msg_batch
+                        ]
                     except StopIteration:
                         self.message_cache = []
 
                 if not msg_batch:
-                    self.misses, backoff_ms = compute_backoff(self.misses, max_backoff=self.timeout)
+                    self.misses, backoff_ms = compute_backoff(
+                        self.misses, max_backoff=self.timeout
+                    )
                     time.sleep(backoff_ms / 1000)
                     return None
 
@@ -175,7 +186,9 @@ class ASQBroker(dramatiq.Broker):
         if queue_name not in self.queues:
             raise dramatiq.errors.QueueNotFound(queue_name)
 
-    def consume(self, queue_name: str, prefetch: int = 1, timeout: int = 5000) -> dramatiq.Consumer:
+    def consume(
+        self, queue_name: str, prefetch: int = 1, timeout: int = 5000
+    ) -> dramatiq.Consumer:
         self.validate_queue(queue_name)
         options = ConsumerOptions(
             queue_name=queue_name,
@@ -202,17 +215,23 @@ class ASQBroker(dramatiq.Broker):
             self.queues.add(queue_name)
             self.emit_after("declare_queue", queue_name)
 
-    def enqueue(self, message: dramatiq.Message, *, delay: Optional[int] = None) -> dramatiq.Message:
+    def enqueue(
+        self, message: dramatiq.Message, *, delay: Optional[int] = None
+    ) -> dramatiq.Message:
         queue_name = message.queue_name
         self.validate_queue(queue_name)
 
         delay_sec = int(delay / 1000) if delay else 0
 
-        logger.debug(f"Enqueueing message {message.message_id} on queue {queue_name}.")
+        logger.debug(
+            f"Enqueueing message {message.message_id} on queue {queue_name}."
+        )
         self.emit_before("enqueue", message, delay)
         q_client = _get_client(queue_name)
         try:
-            q_client.send_message(message.encode(), visibility_timeout=delay_sec)
+            q_client.send_message(
+                message.encode(), visibility_timeout=delay_sec
+            )
             self.emit_after("enqueue", message, delay)
             return message
         except HttpResponseError as e:
