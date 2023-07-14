@@ -134,7 +134,6 @@ def test_creates_dead_letter_queue():
 
 
 def test_consumer_returns_none_with_empty_queue(queue_name):
-
     asq_broker = asq.ASQBroker(dead_letter=False)
     asq_broker.declare_queue(queue_name)
 

@@ -1,22 +1,24 @@
-from dataclasses import dataclass
-from typing import Iterable, List, Optional
-import time
+import logging
 import os
+import time
+from dataclasses import dataclass
+from typing import (
+    Iterable,
+    List,
+    Optional,
+)
+
 import dramatiq
 from azure.core.exceptions import (
-    ResourceExistsError,
     HttpResponseError,
+    ResourceExistsError,
 )
 from azure.storage.queue import (
-    QueueClient,
-    BinaryBase64EncodePolicy,
     BinaryBase64DecodePolicy,
+    BinaryBase64EncodePolicy,
+    QueueClient,
     QueueMessage,
 )
-
-
-import logging
-
 from dramatiq.common import compute_backoff
 
 # Set the logging level for all azure-storage-* libraries
@@ -184,7 +186,6 @@ class ASQBroker(dramatiq.Broker):
         return _ASQConsumer(self, options)
 
     def declare_queue(self, queue_name: str) -> None:
-
         if queue_name not in self.queues:
             self.emit_before("declare_queue", queue_name)
             try:
