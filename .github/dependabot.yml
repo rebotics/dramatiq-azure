@@ -6,8 +6,6 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    labels:
-      - dependencies
     commit-message:
       prefix: "ci"
       include: "scope"
@@ -17,8 +15,6 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    labels:
-      - dependencies
     commit-message:
       prefix: "build"
       include: "scope"
