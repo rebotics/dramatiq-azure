@@ -1,6 +1,17 @@
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.1.6"
+tag_format = "v$version"
+update_changelog_on_bump = true
+version_files = [
+    "pyproject.toml:version",
+    "dramatiq_azure/__version__.py",
+]
+
 [tool.poetry]
 name = "dramatiq_azure"
-version = "0.1.5"
+version = "0.1.6"
 description = "Azure Queue Brokers for Dramatiq"
 authors = ["Stanislas H.B. Sodonon <stanislas.sodonon@gmail.com>"]
 repository = "https://github.com/bidossessi/dramatiq-azure"
@@ -9,25 +20,23 @@ keywords = ['dramatiq', 'azure', 'queue', 'broker']
 license = "Apache-2.0"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.9"
 dramatiq = "^1.12.0"
 azure-core = "^1.20.1"
 azure-storage-queue = "^12.1.6"
-pre-commit = "^2.17.0"
+pre-commit = ">=2.17,<4.0"
 
 [tool.poetry.dev-dependencies]
-flake8 = "^4.0.1"
-black = "^21.11b1"
-pytest = "^6.2.5"
-pytest-cov = "^3.0.0"
+flake8 = "^6.0.0"
+black = "^23.7.0"
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
 mypy = "^0.910"
-twine = "^3.6.0"
 pytest-env = "^0.6.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
-
 
 [tool.black]
 exclude = '''
@@ -44,4 +53,13 @@ exclude = '''
 )/
 '''
 include = '\.pyi?$'
-line-length = 120
+line-length = 80
+
+[tool.isort]
+atomic = true
+combine_as_imports = true
+force_alphabetical_sort_within_sections = true
+force_grid_wrap = 2
+line_length = 100
+multi_line_output = 3
+profile = "black"

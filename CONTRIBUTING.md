@@ -2,7 +2,7 @@
 
 Thank you for wanting to give this project a hand. It's really appreciated.
 
-This aproject is developped with `Python`.
+This project is developped with `Python`.
 To get your development  environment started, here are a few tips.
 
 Have [poetry](https://python-poetry.org/docs/#installation) installed.

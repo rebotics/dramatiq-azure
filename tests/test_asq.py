@@ -25,7 +25,9 @@ def test_can_enqueue_and_process_messages(asq_broker, worker, queue_name):
     assert db == [1]
 
 
-def test_limits_prefetch_if_consumer_queue_is_full(asq_broker, worker, queue_name):
+def test_limits_prefetch_if_consumer_queue_is_full(
+    asq_broker, worker, queue_name
+):
     # Given that I have an actor that stores incoming messages in a database
     db = []
 
@@ -134,7 +136,6 @@ def test_creates_dead_letter_queue():
 
 
 def test_consumer_returns_none_with_empty_queue(queue_name):
-
     asq_broker = asq.ASQBroker(dead_letter=False)
     asq_broker.declare_queue(queue_name)
 

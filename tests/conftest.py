@@ -1,12 +1,15 @@
-import os
 import random
 import string
 
-import pytest
-from unittest import mock
-
 import dramatiq
-from dramatiq.middleware import AgeLimit, Callbacks, Pipelines, Retries, TimeLimit
+import pytest
+from dramatiq.middleware import (
+    AgeLimit,
+    Callbacks,
+    Pipelines,
+    Retries,
+    TimeLimit,
+)
 
 from dramatiq_azure import asq
 
