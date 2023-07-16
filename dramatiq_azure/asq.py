@@ -184,6 +184,7 @@ class ASQBroker(dramatiq.Broker):
 
     @property
     def consumer_class(self):
+        """Allows overriding the default consumer"""
         return ASQConsumer
 
     def validate_queue(self, queue_name: str):
