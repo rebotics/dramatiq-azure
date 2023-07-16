@@ -17,7 +17,7 @@ Set up your machine:
 
 ```
 cd path/to/the/code
-poetry install
+poetry install --with dev
 ```
 
 Set-up pre-commit rules
@@ -47,6 +47,7 @@ Make sure you lint and format the code as well (should be automatic if you insta
 ```shell
 poetry run flake8 --max-complexity 10 .
 poetry run black .
+poetry run isort --ac -l 80 -m 3 --fgw 2 --fass --ca --profile=black .
 ```
 
 All green? You're ready to submit a [pull request](https://github.com/bidossessi/dramatiq-azure/compare).
