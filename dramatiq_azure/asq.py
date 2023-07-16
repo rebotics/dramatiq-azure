@@ -137,9 +137,9 @@ class ASQConsumer(dramatiq.Consumer):
                 msg_batch = []
                 if self.outstanding_message_count < self.prefetch:
                     fillout = self.prefetch - self.outstanding_message_count
-                    kw = {'messages_per_page': fillout}
+                    kw = {"messages_per_page": fillout}
                     if self.visibility_timeout is not None:
-                        kw['visibility_timeout'] = self.visibility_timeout
+                        kw["visibility_timeout"] = self.visibility_timeout
                     pager = self.q_client.receive_messages(**kw)
                     try:
                         msg_batch = [item for item in next(pager.by_page())]
