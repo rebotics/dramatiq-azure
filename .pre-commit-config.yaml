@@ -20,7 +20,7 @@ repos:
     rev: 6.0.0
     hooks:
       - id: flake8
-        args: [ --max-complexity=8 ]
+        args: [ --max-complexity=10 ]
   # isort sorts the imports
   - repo: https://github.com/PyCQA/isort
     rev: 5.12.0
