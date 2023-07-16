@@ -43,6 +43,12 @@ Your tests should follow the [Arrange, Act and Assert](https://jamescooke.info/a
 poetry run pytest
 ```
 
+Make sure you lint and format the code as well (should be automatic if you installed the `pre-commit` rules)
+```shell
+poetry run flake8 --max-complexity 10 .
+poetry run black .
+```
+
 All green? You're ready to submit a [pull request](https://github.com/bidossessi/dramatiq-azure/compare).
 Let us know:
 - what the issue was (link to an existing issue?)
