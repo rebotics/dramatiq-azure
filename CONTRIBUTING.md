@@ -42,7 +42,6 @@ Your tests should follow the [Arrange, Act and Assert](https://jamescooke.info/a
 ```
 poetry run pytest
 ```
-Use [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/).
 
 All green? You're ready to submit a [pull request](https://github.com/bidossessi/dramatiq-azure/compare).
 Let us know:
