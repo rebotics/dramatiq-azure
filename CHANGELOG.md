@@ -1,3 +1,9 @@
+## v0.2.0 (2023-07-16)
+
+### Feat
+
+- allow overriding the default consumer
+
 ## v0.1.6 (2023-07-14)
 
 ### Refactor
