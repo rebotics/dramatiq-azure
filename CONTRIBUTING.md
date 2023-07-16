@@ -31,8 +31,11 @@ Make sure the tests pass:
 poetry run pytest
 ```
 
-Use [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) for your commits to help in automating the change log.
+Use [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) for your commits to help automate the change log. You can also use the `cz` command from [commitizen](https://commitizen-tools.github.io/commitizen/) (in the dev dependencies) to help you write better commit messages - although I'll admit it can get cumbersome.
 
+```shell
+poetry run cz commit
+```
 Make your change. Add tests for your change. Make the tests pass.
 Your tests should follow the [Arrange, Act and Assert](https://jamescooke.info/arrange-act-assert-pattern-for-python-developers.html) pattern as much as possible.
 
