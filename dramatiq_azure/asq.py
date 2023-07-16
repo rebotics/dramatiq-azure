@@ -80,7 +80,7 @@ class _ASQMessage(dramatiq.MessageProxy):
         return cls(_message, dramatiq_message)
 
 
-class _ASQConsumer(dramatiq.Consumer):
+class ASQConsumer(dramatiq.Consumer):
     def __init__(
         self, broker: dramatiq.Broker, options: ConsumerOptions
     ) -> None:
@@ -137,10 +137,10 @@ class _ASQConsumer(dramatiq.Consumer):
                 msg_batch = []
                 if self.outstanding_message_count < self.prefetch:
                     fillout = self.prefetch - self.outstanding_message_count
-                    pager = self.q_client.receive_messages(
-                        messages_per_page=fillout,
-                        visibility_timeout=self.visibility_timeout,
-                    )
+                    kw = {"messages_per_page": fillout}
+                    if self.visibility_timeout is not None:
+                        kw["visibility_timeout"] = self.visibility_timeout
+                    pager = self.q_client.receive_messages(**kw)
                     try:
                         msg_batch = [item for item in next(pager.by_page())]
                         self.message_cache = [
@@ -182,6 +182,10 @@ class ASQBroker(dramatiq.Broker):
         self.queues: set = set()
         self.dead_letter = dead_letter
 
+    @property
+    def consumer_class(self):
+        return ASQConsumer
+
     def validate_queue(self, queue_name: str):
         if queue_name not in self.queues:
             raise dramatiq.errors.QueueNotFound(queue_name)
@@ -196,7 +200,7 @@ class ASQBroker(dramatiq.Broker):
             timeout=timeout,
             dead_letter=self.dead_letter,
         )
-        return _ASQConsumer(self, options)
+        return self.consumer_class(self, options)
 
     def declare_queue(self, queue_name: str) -> None:
         if queue_name not in self.queues:
