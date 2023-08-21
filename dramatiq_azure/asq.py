@@ -40,15 +40,32 @@ MAX_RECEIVES = 3
 
 #: Azure Storage authentication
 CONN_STR = os.getenv("AZURE_STORAGE_CONNECTION_STR", "")
+ACCOUNT_NAME = os.getenv(
+    "AZURE_STORAGE_ACCOUNT_NAME",
+    os.getenv("AZURE_ACCOUNT_NAME", ""),
+)
+USE_SSL = os.getenv("AZURE_SSL", "true").lower() == "true"
 
 
 def _get_client(queue_name: str) -> QueueClient:
-    return QueueClient.from_connection_string(
-        conn_str=CONN_STR,
-        queue_name=queue_name,
-        message_encode_policy=BinaryBase64EncodePolicy(),
-        message_decode_policy=BinaryBase64DecodePolicy(),
-    )
+    try:
+        from azure.identity import DefaultAzureCredential
+    except ImportError:
+        return QueueClient.from_connection_string(
+            conn_str=CONN_STR,
+            queue_name=queue_name,
+            message_encode_policy=BinaryBase64EncodePolicy(),
+            message_decode_policy=BinaryBase64DecodePolicy(),
+        )
+    else:
+        protocol = "https" if USE_SSL else "http"
+        return QueueClient(
+            f"{protocol}://{ACCOUNT_NAME}.queue.core.windows.net",
+            queue_name=queue_name,
+            credential=DefaultAzureCredential(),  # type: ignore
+            message_encode_policy=BinaryBase64EncodePolicy(),
+            message_decode_policy=BinaryBase64DecodePolicy(),
+        )
 
 
 def _get_dlq_client(queue_name: str) -> QueueClient:
