@@ -50,6 +50,7 @@ The following authentication methods are supported by the broker:
 If this variable is not set, passwordless authentication will be used.
 Creating a connection string for your Azure account is documented [here](https://docs.microsoft.com/en-us/azure/storage/common/storage-configure-connection-string).
 2. [Passwordless](https://learn.microsoft.com/en-us/azure/developer/python/sdk/authentication-overview#recommended-app-authentication-approach) (token-based) authentication **(Recommended)**: `AZURE_STORAGE_ACCOUNT_NAME` environment variable must be set.
+
 The list of other mandatory variables depends on where the app is being run.
 More information can be found [here](https://learn.microsoft.com/en-us/azure/storage/queues/storage-quickstart-queues-python?tabs=passwordless%2Croles-azure-portal%2Cenvironment-variable-windows%2Csign-in-azure-cli#authenticate-to-azure).
 
