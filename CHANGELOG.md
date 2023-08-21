@@ -1,3 +1,9 @@
+## v0.3.0 (2023-08-21)
+
+### Feat
+
+- Add DefaultAzureCredential
+
 ## v0.2.0 (2023-07-16)
 
 ### Feat
