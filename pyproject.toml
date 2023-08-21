@@ -24,6 +24,7 @@ python = "^3.9"
 dramatiq = "^1.12.0"
 azure-core = "^1.20.1"
 azure-storage-queue = "^12.1.6"
+azure-identity = {version = "~1.13", optional = true}
 
 [tool.poetry.dev-dependencies]
 flake8 = "^6.1.0"
@@ -39,6 +40,9 @@ pre-commit = ">=2.17,<4.0"
 flake8-bugbear = "^23.7.10"
 mccabe = "^0.7.0"
 isort = "^5.12.0"
+
+[tool.poetry.extras]
+identity = ["azure-identity"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -16,19 +16,13 @@ An implementation for [Azure Service Bus](https://docs.microsoft.com/en-us/azure
 
 ```shell
     pip install dramatiq-azure
+    pip install dramatiq-azure[identity]  # for passwordless authentication
 ```
 ## Usage
 
 ### ASQBroker
 
-The broker looks for `AZURE_STORAGE_CONNECTION_STR` in the environment, to authenticate on Azure Storage.
-You need to make sure that the variable exists at runtime.
-
-Creating a connection string for your Azure account is documented [here](https://docs.microsoft.com/en-us/azure/storage/common/storage-configure-connection-string).
-
-
 ```python
-import os
 import dramatiq
 
 from dramatiq.middleware import AgeLimit, TimeLimit, Callbacks, Pipelines, Prometheus, Retries
@@ -48,6 +42,16 @@ broker = ASQBroker(
 )
 dramatiq.set_broker(broker)
 ```
+
+### Authentication
+
+The following authentication methods are supported by the broker:
+1. Connection string based: `AZURE_STORAGE_CONNECTION_STR` environment variable must be set.
+If this variable is not set, passwordless authentication will be used.
+Creating a connection string for your Azure account is documented [here](https://docs.microsoft.com/en-us/azure/storage/common/storage-configure-connection-string).
+2. [Passwordless](https://learn.microsoft.com/en-us/azure/developer/python/sdk/authentication-overview#recommended-app-authentication-approach) (token-based) authentication **(Recommended)**: `AZURE_STORAGE_ACCOUNT_NAME` environment variable must be set.
+The list of other mandatory variables depends on where the app is being run.
+More information can be found [here](https://learn.microsoft.com/en-us/azure/storage/queues/storage-quickstart-queues-python?tabs=passwordless%2Croles-azure-portal%2Cenvironment-variable-windows%2Csign-in-azure-cli#authenticate-to-azure).
 
 ## Tests
 
