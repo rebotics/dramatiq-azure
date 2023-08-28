@@ -24,7 +24,7 @@ python = "^3.9"
 dramatiq = "^1.12.0"
 azure-core = "^1.20.1"
 azure-storage-queue = "^12.1.6"
-azure-identity = {version = "~1.13", optional = true}
+azure-identity = {version = ">=1.13,<1.15", optional = true}
 
 [tool.poetry.dev-dependencies]
 flake8 = "^6.1.0"
