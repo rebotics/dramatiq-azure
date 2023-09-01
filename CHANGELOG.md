@@ -1,3 +1,9 @@
+## v0.3.1 (2023-09-01)
+
+### Refactor
+
+- improve environment variable options for passwordless authentication
+
 ## v0.3.0 (2023-08-21)
 
 ### Feat
