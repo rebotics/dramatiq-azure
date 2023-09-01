@@ -54,6 +54,16 @@ Creating a connection string for your Azure account is documented [here](https:/
 The list of other mandatory variables depends on where the app is being run.
 More information can be found [here](https://learn.microsoft.com/en-us/azure/storage/queues/storage-quickstart-queues-python?tabs=passwordless%2Croles-azure-portal%2Cenvironment-variable-windows%2Csign-in-azure-cli#authenticate-to-azure).
 
+### Environment variables
+
+The following environment variables can be used to configure the broker:
+- `AZURE_STORAGE_CONNECTION_STR`: Azure Storage connection string;
+- `AZURE_STORAGE_ACCOUNT_NAME`/`AZURE_ACCOUNT_NAME`: Azure Storage account name;
+- `AZURE_ENDPOINT_SUFFIX`: Azure Storage endpoint suffix;
+- `AZURE_SSL`: Whether to use SSL for the connection;
+- `AZURE_QUEUE_ACCOUNT_URL`: Azure Storage account URL;
+- `DRAMATIQ_ASQ_MIN_TIMEOUT`: The minimum time to wait between polls in second.
+
 ## Tests
 
 Tests require a running [Azurite](https://github.com/Azure/Azurite) instance. You can easily launch `azurite` through [Docker](https://www.docker.com/).

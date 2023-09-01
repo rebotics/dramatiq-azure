@@ -39,18 +39,22 @@ MIN_TIMEOUT = int(os.getenv("DRAMATIQ_ASQ_MIN_TIMEOUT", "20"))
 MAX_RECEIVES = 3
 
 #: Azure Storage authentication
+ENDPOINT_SUFFIX = os.getenv("AZURE_ENDPOINT_SUFFIX", "core.windows.net")
 CONN_STR = os.getenv("AZURE_STORAGE_CONNECTION_STR", "")
 ACCOUNT_NAME = os.getenv(
     "AZURE_STORAGE_ACCOUNT_NAME",
     os.getenv("AZURE_ACCOUNT_NAME", ""),
 )
 USE_SSL = os.getenv("AZURE_SSL", "true").lower() == "true"
+PROTOCOL = "https" if USE_SSL else "http"
+ACCOUNT_URL = os.getenv(
+    "AZURE_QUEUE_ACCOUNT_URL",
+    f"{PROTOCOL}://{ACCOUNT_NAME}.queue.{ENDPOINT_SUFFIX}",
+)
 
 
 def _get_client(queue_name: str) -> QueueClient:
-    try:
-        from azure.identity import DefaultAzureCredential
-    except ImportError:
+    if CONN_STR:
         return QueueClient.from_connection_string(
             conn_str=CONN_STR,
             queue_name=queue_name,
@@ -58,9 +62,10 @@ def _get_client(queue_name: str) -> QueueClient:
             message_decode_policy=BinaryBase64DecodePolicy(),
         )
     else:
-        protocol = "https" if USE_SSL else "http"
+        from azure.identity import DefaultAzureCredential
+
         return QueueClient(
-            f"{protocol}://{ACCOUNT_NAME}.queue.core.windows.net",
+            account_url=ACCOUNT_URL,
             queue_name=queue_name,
             credential=DefaultAzureCredential(),  # type: ignore
             message_encode_policy=BinaryBase64EncodePolicy(),
