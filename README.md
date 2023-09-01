@@ -80,4 +80,5 @@ pytest
 
 ## Contributions
 
-Found an itch you know how to scratch? PR welcome
+Found an itch you know how to scratch? PR welcome (just remember to read the
+[contribution guide](CONTRIBUTING.md)) !
