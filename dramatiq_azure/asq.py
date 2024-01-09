@@ -126,9 +126,11 @@ class ASQConsumer(dramatiq.Consumer):
         return len(self.queued_message_ids) + len(self.message_cache)
 
     def __remove_from_queue(self, message: _ASQMessage):
-        self.q_client.delete_message(message._asq_message)
-        if message.message_id in self.queued_message_ids:
-            self.queued_message_ids.remove(message.message_id)
+        try:
+            self.q_client.delete_message(message._asq_message)
+        finally:
+            if message.message_id in self.queued_message_ids:
+                self.queued_message_ids.remove(message.message_id)
 
     def ack(self, message: _ASQMessage) -> None:
         self.__remove_from_queue(message)
